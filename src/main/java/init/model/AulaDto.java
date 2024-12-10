@@ -1,8 +1,5 @@
 package init.model;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class AulaDto {
 	private int idAula;
 	private String nombre;

@@ -51,7 +51,7 @@ public class AulasServiceImpl implements AulasService {
 	}
 
 	@Override
-	public boolean modificar(AulaDto aula) {
+	public boolean modificarAula(AulaDto aula) {
 		try {
 			if(aulasDao.existsById(aula.getIdAula())) {
 				aulasDao.save(mapeador.aulaDtoToEntity(aula));

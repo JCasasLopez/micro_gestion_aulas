@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
@@ -48,12 +48,13 @@ public class AulasServiceTests {
 		
 		//Assert
 		assertTrue(resultado, "El aula no se ha guardado correctamente");
-		verify(mapeador).aulaDtoToEntity(aulaDto);
-		verify(aulasDao).save(aula);
+		var inOrder = inOrder(mapeador, aulasDao);
+		inOrder.verify(mapeador).aulaDtoToEntity(aulaDto);
+		inOrder.verify(aulasDao).save(aula);
 	}
 	
 	@Test
-	@DisplayName("Lanza AulaDatabaseException cuando no se puede grabar aula")
+	@DisplayName("Lanza AulaDatabaseException si no se puede grabar aula")
 	void altaAula_deberiaLanzarAulaDatabaseExceptionSiNoGrabaAula() {
 		//Arrange
 		AulaDto aulaDto = new AulaDto();
@@ -62,11 +63,13 @@ public class AulasServiceTests {
         when(aulasDao.save(aula)).thenThrow(new RuntimeException());
 
 		//Act 
-        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.altaAula(aulaDto);});
+        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.altaAula(aulaDto);}, 
+        		"Se esperaba AulaDatabaseException al fallar la modificación del aula");
 		
 		//Assert
-		verify(mapeador).aulaDtoToEntity(aulaDto);
-		verify(aulasDao).save(aula);
+        var inOrder = inOrder(mapeador, aulasDao);
+		inOrder.verify(mapeador).aulaDtoToEntity(aulaDto);
+		inOrder.verify(aulasDao).save(aula);
 	}
 	
 	@Test
@@ -81,8 +84,9 @@ public class AulasServiceTests {
 		
 		//Assert
 		assertTrue(resultado, "El aula se ha borrado correctamente");
-		verify(aulasDao).existsById(idAula);
-		verify(aulasDao).deleteById(idAula);
+		var inOrder = inOrder(aulasDao);
+		inOrder.verify(aulasDao).existsById(idAula);
+		inOrder.verify(aulasDao).deleteById(idAula);
 	}
 	
 	@Test
@@ -97,12 +101,13 @@ public class AulasServiceTests {
 		
 		//Assert
 		assertFalse(resultado, "El aula NO se ha borrado correctamente");
-		verify(aulasDao).existsById(idAula);
-		verify(aulasDao, never()).deleteById(idAula);
+		var inOrder = inOrder(aulasDao);
+		inOrder.verify(aulasDao).existsById(idAula);
+		inOrder.verify(aulasDao, never()).deleteById(idAula);
 	}
 	
 	@Test
-	@DisplayName("Lanza AulaDatabaseException cuando no se puede borrar aula")
+	@DisplayName("Lanza AulaDatabaseException si no se puede borrar aula")
 	void bajaAula_deberiaLanzarAulaDatabaseExceptionSiNoBorraAula() {
 		//Arrange
 		int idAula = 0;
@@ -110,10 +115,74 @@ public class AulasServiceTests {
         doThrow(new RuntimeException()).when(aulasDao).deleteById(idAula);
 
 		//Act 
-        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.bajaAula(idAula);});
+        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.bajaAula(idAula);}, 
+        		"Se esperaba AulaDatabaseException al fallar la modificación del aula");
 		
 		//Assert
-		verify(aulasDao).existsById(idAula);
-		verify(aulasDao).deleteById(idAula);
+        var inOrder = inOrder(aulasDao);
+        inOrder.verify(aulasDao).existsById(idAula);
+        inOrder.verify(aulasDao).deleteById(idAula);
 	}
+	
+	@Test
+	@DisplayName("Devuelve true si el aula se ha modificado correctamente")
+	void modificarAula_deberiaModificarAula() {
+		//Arrange
+		AulaDto aulaDto = new AulaDto(0, "aula1", 30, false, false);
+		Aula aula = new Aula();
+		when(aulasDao.existsById(aulaDto.getIdAula())).thenReturn(true);
+		when(mapeador.aulaDtoToEntity(aulaDto)).thenReturn(aula);
+		when(aulasDao.save(aula)).thenReturn(aula);
+		
+		//Act
+		boolean resultado = aulasServiceImpl.modificarAula(aulaDto);
+		
+		//Assert
+		assertTrue(resultado, "El aula no se ha modificado correctamente");
+		var inOrder = inOrder(aulasDao, mapeador, aulasDao);
+		inOrder.verify(aulasDao).existsById(aulaDto.getIdAula());
+		inOrder.verify(mapeador).aulaDtoToEntity(aulaDto);
+		inOrder.verify(aulasDao).save(aula);
+	}
+	
+	@Test
+	@DisplayName("Devuelve false si el aula no existe")
+	void modificarAula_aulaNoExiste() {
+		//Arrange
+		AulaDto aulaDto = new AulaDto(0, "aula1", 30, false, false);
+		Aula aula = new Aula();
+		when(aulasDao.existsById(aulaDto.getIdAula())).thenReturn(false);
+		
+		//Act
+		boolean resultado = aulasServiceImpl.modificarAula(aulaDto);
+		
+		//Assert
+		assertFalse(resultado, "El aula se ha modificado correctamente cuando no existe");
+		var inOrder = inOrder(aulasDao, mapeador, aulasDao);
+		inOrder.verify(aulasDao).existsById(aulaDto.getIdAula());
+		inOrder.verify(mapeador, never()).aulaDtoToEntity(aulaDto);
+		inOrder.verify(aulasDao, never()).save(aula);
+	}
+	
+	@Test
+	@DisplayName("Lanza AulaDatabaseExcepction si no se puede modificar aula")
+	void modificarAula_deberiaLanzarAulaDatabaseExceptionSiNoModificaAula() {
+		//Arrange
+		AulaDto aulaDto = new AulaDto(0, "aula1", 30, false, false);
+		Aula aula = new Aula();
+		when(aulasDao.existsById(aulaDto.getIdAula())).thenReturn(true);
+		when(mapeador.aulaDtoToEntity(aulaDto)).thenReturn(aula);
+		when(aulasDao.save(aula)).thenThrow(new RuntimeException());
+				
+		//Act
+        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.modificarAula(aulaDto);}, 
+        		"Se esperaba AulaDatabaseException al fallar la modificación del aula");
+				
+		//Assert
+		var inOrder = inOrder(aulasDao, mapeador, aulasDao);
+		inOrder.verify(aulasDao).existsById(aulaDto.getIdAula());
+		inOrder.verify(mapeador).aulaDtoToEntity(aulaDto);
+		inOrder.verify(aulasDao).save(aula);	
+	}
+	
 }

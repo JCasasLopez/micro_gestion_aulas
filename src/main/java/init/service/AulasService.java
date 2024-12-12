@@ -6,6 +6,6 @@ import init.model.BloqueoDto;
 public interface AulasService {
 	boolean altaAula(AulaDto aula);
 	boolean bajaAula(int idAula);
-	boolean modificar(AulaDto aula);
+	boolean modificarAula(AulaDto aula);
 	void bloquearHorario(BloqueoDto bloqueo);
 }

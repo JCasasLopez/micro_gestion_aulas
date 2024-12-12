@@ -1,7 +1,9 @@
 package init;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import init.dao.AulasDao;
 import init.entities.Aula;
+import init.exception.AulaDatabaseException;
 import init.model.AulaDto;
 import init.service.AulasServiceImpl;
 import init.utilidades.Mapeador;
@@ -50,19 +53,18 @@ public class AulasServiceTests {
 	}
 	
 	@Test
-	@DisplayName("Devuelve false cuando el alta NO se efectúa correctamente")
-	void altaAula_deberiaNoDardeAltaAula() {
+	@DisplayName("Lanza AulaDatabaseException cuando no se puede grabar aula")
+	void altaAula_deberiaLanzarAulaDatabaseExceptionSiNoGrabaAula() {
 		//Arrange
 		AulaDto aulaDto = new AulaDto();
 		Aula aula = new Aula();
 		when(mapeador.aulaDtoToEntity(aulaDto)).thenReturn(aula);
-		when(aulasDao.save(aula)).thenReturn(null);
-		
-		//Act
-		boolean resultado = aulasServiceImpl.altaAula(aulaDto);
+        when(aulasDao.save(aula)).thenThrow(new RuntimeException());
+
+		//Act 
+        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.altaAula(aulaDto);});
 		
 		//Assert
-		assertFalse(resultado, "El aula se ha guardado cuando no debía");
 		verify(mapeador).aulaDtoToEntity(aulaDto);
 		verify(aulasDao).save(aula);
 	}
@@ -84,8 +86,8 @@ public class AulasServiceTests {
 	}
 	
 	@Test
-	@DisplayName("Devuelve false cuando la baja se efectúa correctamente")
-	void bajaAula_deberiaNoDardeBajaAula() {
+	@DisplayName("Devuelve false cuando el aula no existe")
+	void bajaAula_aulaNoExiste() {
 		//Arrange
 		int idAula = 0;
 		when(aulasDao.existsById(idAula)).thenReturn(false);
@@ -97,5 +99,21 @@ public class AulasServiceTests {
 		assertFalse(resultado, "El aula NO se ha borrado correctamente");
 		verify(aulasDao).existsById(idAula);
 		verify(aulasDao, never()).deleteById(idAula);
+	}
+	
+	@Test
+	@DisplayName("Lanza AulaDatabaseException cuando no se puede borrar aula")
+	void bajaAula_deberiaLanzarAulaDatabaseExceptionSiNoBorraAula() {
+		//Arrange
+		int idAula = 0;
+		when(aulasDao.existsById(idAula)).thenReturn(true);
+        doThrow(new RuntimeException()).when(aulasDao).deleteById(idAula);
+
+		//Act 
+        assertThrows(AulaDatabaseException.class, () -> {aulasServiceImpl.bajaAula(idAula);});
+		
+		//Assert
+		verify(aulasDao).existsById(idAula);
+		verify(aulasDao).deleteById(idAula);
 	}
 }

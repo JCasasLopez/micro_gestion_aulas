@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
@@ -14,11 +16,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClient.RequestBodySpec;
+import org.springframework.web.client.RestClient.RequestBodyUriSpec;
+import org.springframework.web.client.RestClient.ResponseSpec;
 
 import init.dao.AulasDao;
 import init.entities.Aula;
 import init.exception.AulaDatabaseException;
+import init.exception.MicroserviceCommunicationException;
 import init.model.AulaDto;
+import init.model.BloqueoDto;
 import init.service.AulasServiceImpl;
 import init.utilidades.Mapeador;
 
@@ -30,6 +39,9 @@ public class AulasServiceTests {
 	
 	@Mock
 	AulasDao aulasDao;
+	
+	@Mock
+	RestClient restClient;
 	
 	@InjectMocks
 	AulasServiceImpl aulasServiceImpl;
@@ -185,4 +197,44 @@ public class AulasServiceTests {
 		inOrder.verify(aulasDao).save(aula);	
 	}
 	
+	@Test
+	@DisplayName("Llamada a 'Reservas Aulas'")
+	void bloquearHorario_deberiaLlamarAReservarAulas() {
+		// Arrange
+		String url="http://servicio-reservas/reservas/";
+		BloqueoDto bloqueoDto = new BloqueoDto();  
+		RequestBodyUriSpec requestBodyUriSpec = mock(RequestBodyUriSpec.class);
+		RequestBodySpec requestBodySpec = mock(RequestBodySpec.class);
+		ResponseSpec responseSpec = mock(ResponseSpec.class);
+
+		when(restClient.post()).thenReturn(requestBodyUriSpec);
+		when(requestBodyUriSpec.uri(url + "/hacerReserva")).thenReturn(requestBodySpec);
+		when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+		when(requestBodySpec.body(bloqueoDto)).thenReturn(requestBodySpec);
+		when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+		when(responseSpec.toBodilessEntity()).thenReturn(null);
+
+		// Act
+		aulasServiceImpl.bloquearHorario(bloqueoDto);
+
+		// Assert
+		verify(restClient).post();
+		verify(requestBodyUriSpec).uri(url + "/hacerReserva");
+		verify(requestBodySpec).contentType(MediaType.APPLICATION_JSON);
+		verify(requestBodySpec).body(bloqueoDto);
+		verify(requestBodySpec).retrieve();
+		verify(responseSpec).toBodilessEntity();
+	}
+	
+	@Test
+	@DisplayName("Lanza MicroserviceCommunicationExcepction si no puede llamar a 'Reservas Aulas'")
+	void modificarAula_deberiaLanzarMicroserviceCommunicationExcepction() {
+		//Arrange
+		BloqueoDto bloqueo = new BloqueoDto();
+		
+		//Act & Assert
+		assertThrows(MicroserviceCommunicationException.class, () -> {aulasServiceImpl.bloquearHorario(bloqueo);}, 
+	        		"Se esperaba MicroserviceCommunicationException al fallar la llamada al microservicio Reservas Aulas");
+	}
+
 }

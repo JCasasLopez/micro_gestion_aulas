@@ -25,25 +25,42 @@ public class AulasServiceImpl implements AulasService {
 
 	@Override
 	public boolean altaAula(AulaDto aula) {	
-		return aulasDao.save(mapeador.aulaDtoToEntity(aula)) != null;
+		try {
+			aulasDao.save(mapeador.aulaDtoToEntity(aula));
+	        return true;
+			
+		}catch(RuntimeException ex) {
+			throw new AulaDatabaseException("Error en la base de datos al intentar guardar el aula", ex);
+		}
 	}
 
 	@Override
 	public boolean bajaAula(int idAula) {
-		if(aulasDao.existsById(idAula)) {
-			aulasDao.deleteById(idAula);
-			return true;
+		try {
+			if(aulasDao.existsById(idAula)) {
+				aulasDao.deleteById(idAula);
+				return true;
+			}
+			return false;
+			
+		}catch(RuntimeException ex) {
+			throw new AulaDatabaseException("Error en la base de datos al intentar eliminar el aula", ex);
 		}
-		return false;
 	}
 
 	@Override
 	public boolean modificar(AulaDto aula) {
-		if(aulasDao.existsById(aula.getIdAula())) {
-			aulasDao.save(mapeador.aulaDtoToEntity(aula));
-			return true;
+		try {
+			if(aulasDao.existsById(aula.getIdAula())) {
+				aulasDao.save(mapeador.aulaDtoToEntity(aula));
+				return true;
+			}
+			return false;
+			
+		}catch(RuntimeException ex) {
+			throw new AulaDatabaseException("Error en la base de datos al intentar modificar el aula", ex);
 		}
-		return false;
+		
 	}
 
 	@Override
@@ -54,14 +71,19 @@ public class AulasServiceImpl implements AulasService {
 		//Como a todos los efectos es una reserva sin límite de tiempo, se realizar a través del 
 		//microservicio "gestion_reservas".
 		
-		restClient
-					.post()
-					.uri(url + "/hacerReserva")
-					.contentType(MediaType.APPLICATION_JSON)
-					.body(bloqueoHorario)
-					.retrieve()
-					.toBodilessEntity();
-
+		try{
+			restClient
+				.post()
+				.uri(url + "/hacerReserva")
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(bloqueoHorario)
+				.retrieve()
+				.toBodilessEntity();
+			
+		}catch(RuntimeException ex) {
+			throw new MicroserviceCommunicationException("Error al comunicar con el servicio de reservas para bloquear el horario", ex);
+		}
+					
 	}
 
 }

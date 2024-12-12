@@ -2,6 +2,7 @@ package init;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +32,7 @@ public class AulasServiceTests {
 	AulasServiceImpl aulasServiceImpl;
 	
 	@Test
-	@DisplayName("Efectúa el alta de un aula correctamente")
+	@DisplayName("Devuelve true cuando el alta se efectúa correctamente")
 	void altaAula_deberiaDardeAltaAula() {
 		//Arrange
 		AulaDto aulaDto = new AulaDto();
@@ -49,8 +50,8 @@ public class AulasServiceTests {
 	}
 	
 	@Test
-	@DisplayName("Se produce un error al efectuar el alta de un aula")
-	void altaAula_errorAlDardeAltaAula() {
+	@DisplayName("Devuelve false cuando el alta NO se efectúa correctamente")
+	void altaAula_deberiaNoDardeAltaAula() {
 		//Arrange
 		AulaDto aulaDto = new AulaDto();
 		Aula aula = new Aula();
@@ -67,18 +68,34 @@ public class AulasServiceTests {
 	}
 	
 	@Test
-	@DisplayName("Efectúa la baja de un aula correctamente")
+	@DisplayName("Devuelve true cuando la baja se efectúa correctamente")
 	void bajaAula_deberiaDarDeBajaAula() {
 		//Arrange
 		int idAula = 0;
 		when(aulasDao.existsById(idAula)).thenReturn(true);
 		
 		//Act
-		aulasServiceImpl.bajaAula(idAula);
+		boolean resultado = aulasServiceImpl.bajaAula(idAula);
 		
 		//Assert
+		assertTrue(resultado, "El aula se ha borrado correctamente");
 		verify(aulasDao).existsById(idAula);
 		verify(aulasDao).deleteById(idAula);
+	}
+	
+	@Test
+	@DisplayName("Devuelve false cuando la baja se efectúa correctamente")
+	void bajaAula_deberiaNoDardeBajaAula() {
+		//Arrange
+		int idAula = 0;
+		when(aulasDao.existsById(idAula)).thenReturn(false);
 		
+		//Act
+		boolean resultado = aulasServiceImpl.bajaAula(idAula);
+		
+		//Assert
+		assertFalse(resultado, "El aula NO se ha borrado correctamente");
+		verify(aulasDao).existsById(idAula);
+		verify(aulasDao, never()).deleteById(idAula);
 	}
 }

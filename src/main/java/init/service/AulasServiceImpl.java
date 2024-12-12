@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import init.dao.AulasDao;
+import init.exception.AulaDatabaseException;
+import init.exception.MicroserviceCommunicationException;
 import init.model.AulaDto;
 import init.model.BloqueoDto;
 import init.utilidades.Mapeador;
@@ -30,7 +32,7 @@ public class AulasServiceImpl implements AulasService {
 	        return true;
 			
 		}catch(RuntimeException ex) {
-			throw new AulaDatabaseException("Error en la base de datos al intentar guardar el aula", ex);
+			throw new AulaDatabaseException("Error en la base de datos al intentar guardar el aula");
 		}
 	}
 
@@ -44,7 +46,7 @@ public class AulasServiceImpl implements AulasService {
 			return false;
 			
 		}catch(RuntimeException ex) {
-			throw new AulaDatabaseException("Error en la base de datos al intentar eliminar el aula", ex);
+			throw new AulaDatabaseException("Error en la base de datos al intentar eliminar el aula");
 		}
 	}
 
@@ -58,7 +60,7 @@ public class AulasServiceImpl implements AulasService {
 			return false;
 			
 		}catch(RuntimeException ex) {
-			throw new AulaDatabaseException("Error en la base de datos al intentar modificar el aula", ex);
+			throw new AulaDatabaseException("Error en la base de datos al intentar modificar el aula");
 		}
 		
 	}
@@ -81,7 +83,7 @@ public class AulasServiceImpl implements AulasService {
 				.toBodilessEntity();
 			
 		}catch(RuntimeException ex) {
-			throw new MicroserviceCommunicationException("Error al comunicar con el servicio de reservas para bloquear el horario", ex);
+			throw new MicroserviceCommunicationException("Error al comunicar con el servicio de reservas para bloquear el horario");
 		}
 					
 	}

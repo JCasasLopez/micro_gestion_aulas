@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
 
+import init.exception.MicroserviceCommunicationException;
 import init.model.AulaDto;
+import init.model.BloqueoDto;
 import init.service.AulasService;
 
 @CrossOrigin("*")
@@ -74,7 +76,7 @@ public class AulasController {
         }
 	}
 	
-	@DeleteMapping(value="bajaAula", consumes=MediaType.APPLICATION_JSON_VALUE)
+	@DeleteMapping(value="bajaAula")
 	public ResponseEntity<String> bajaAula(@RequestParam int idAula, 
 											@RequestHeader("Authorization") String autorizacion){
 		
@@ -110,6 +112,26 @@ public class AulasController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body("Error al modificar el aula");
         }
+	}
+	
+	@PostMapping(value="bloquearHorario", consumes=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> bloquearHorario(@RequestBody BloqueoDto bloqueoHorario, 
+											@RequestHeader("Authorization") String autorizacion){
+		
+		ResponseEntity<String> validacion = validarAdmin(autorizacion);
+		if(validacion != null) {
+		    return validacion;
+		}
+        
+        try {
+            aulasService.bloquearHorario(bloqueoHorario);
+            return ResponseEntity.ok("Horario bloqueado correctamente");
+            
+        } catch (MicroserviceCommunicationException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error al llamar al microservicio Reservas");
+        }
+        
 	}
 	
 }

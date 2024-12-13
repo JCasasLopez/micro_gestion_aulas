@@ -7,6 +7,7 @@ import org.springframework.web.client.RestClient;
 import init.dao.AulasDao;
 import init.exception.AulaDatabaseException;
 import init.exception.MicroserviceCommunicationException;
+import init.exception.ValidationException;
 import init.model.AulaDto;
 import init.model.BloqueoDto;
 import init.utilidades.Mapeador;
@@ -31,9 +32,14 @@ public class AulasServiceImpl implements AulasService {
 			aulasDao.save(mapeador.aulaDtoToEntity(aula));
 	        return true;
 			
-		}catch(RuntimeException ex) {
-			throw new AulaDatabaseException("Error en la base de datos al intentar guardar el aula");
-		}
+		} catch (IllegalArgumentException ex) {
+	        // Errores en los datos de entrada
+	        throw new ValidationException("Error en los datos del aula");
+	        
+	    } catch (RuntimeException ex) {
+	        // Errores de base de datos u otros
+	        throw new AulaDatabaseException("Error al guardar el aula en la base de datos");
+	    }
 	}
 
 	@Override
@@ -44,10 +50,10 @@ public class AulasServiceImpl implements AulasService {
 				return true;
 			}
 			return false;
-			
-		}catch(RuntimeException ex) {
-			throw new AulaDatabaseException("Error en la base de datos al intentar eliminar el aula");
-		}
+	        
+	    } catch (RuntimeException ex) {
+	        throw new AulaDatabaseException("Error al borrar el aula de la base de datos");
+	    }
 	}
 
 	@Override
@@ -59,7 +65,10 @@ public class AulasServiceImpl implements AulasService {
 			}
 			return false;
 			
-		}catch(RuntimeException ex) {
+		} catch (IllegalArgumentException ex) {
+	        throw new ValidationException("Error en los datos del aula");
+			
+		}catch (RuntimeException ex) {
 			throw new AulaDatabaseException("Error en la base de datos al intentar modificar el aula");
 		}
 		
@@ -82,9 +91,14 @@ public class AulasServiceImpl implements AulasService {
 				.retrieve()
 				.toBodilessEntity();
 			
-		}catch(RuntimeException ex) {
-			throw new MicroserviceCommunicationException("Error al comunicar con el servicio de reservas para bloquear el horario");
-		}
+		} catch (IllegalArgumentException ex) {  
+	        // Errores en la construcción de la solicitud
+	        throw new ValidationException("Error en los datos de la solicitud de bloqueo");
+	        
+	    } catch (RuntimeException ex) {
+	        // Otros errores  
+	        throw new MicroserviceCommunicationException("Error en la llamada al servicio Reservas");
+	    }
 					
 	}
 

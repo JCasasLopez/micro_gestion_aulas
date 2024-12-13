@@ -26,8 +26,9 @@ public class AulasController {
 		this.aulasService = aulasService;
 	}
 	
+	//Métodos auxiliares que se encargan de llamar al micro de usuarios y devolver la respuesta
+	
 	private boolean validarRole(String autorizacion) {
-		//Llamamos al micro usuarios para preguntar si el usuario es ADMIN
 		String url="http://servicio-usuarios/usuarios/";
 		try {
 			return restClient
@@ -43,13 +44,25 @@ public class AulasController {
 		}
 	}
 	
+	private ResponseEntity<String> validarAdmin(String autorizacion) {
+	    if (!validarRole(autorizacion)) {
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                .body("Solo los administradores pueden acceder a este método");
+	    }
+	    return null; 
+	}
+	
+	
+	//Estos son los métodos de Controller propiamente dichos
+	
 	@PostMapping(value="altaAula", consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> altaAula(@RequestBody AulaDto aula, 
 											@RequestHeader("Authorization") String autorizacion){
-		if (!validarRole(autorizacion)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                               	 .body("Solo los administradores pueden acceder a este método");
-        }
+		
+		ResponseEntity<String> validacion = validarAdmin(autorizacion);
+		if(validacion != null) {
+		    return validacion;
+		}
         
         try {
             aulasService.altaAula(aula);
@@ -64,10 +77,11 @@ public class AulasController {
 	@DeleteMapping(value="bajaAula", consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> bajaAula(@RequestParam int idAula, 
 											@RequestHeader("Authorization") String autorizacion){
-		if (!validarRole(autorizacion)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                               	 .body("Solo los administradores pueden acceder a este método");
-        }
+		
+		ResponseEntity<String> validacion = validarAdmin(autorizacion);
+		if(validacion != null) {
+		    return validacion;
+		}
         
         try {
             aulasService.bajaAula(idAula);
@@ -82,10 +96,11 @@ public class AulasController {
 	@PostMapping(value="modificarAula", consumes=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> modificarAula(@RequestBody AulaDto aula, 
 											@RequestHeader("Authorization") String autorizacion){
-		if (!validarRole(autorizacion)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                               	 .body("Solo los administradores pueden acceder a este método");
-        }
+		
+		ResponseEntity<String> validacion = validarAdmin(autorizacion);
+		if(validacion != null) {
+		    return validacion;
+		}
         
         try {
             aulasService.altaAula(aula);
